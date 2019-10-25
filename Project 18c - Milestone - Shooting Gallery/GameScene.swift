@@ -12,7 +12,7 @@ import GameplayKit
 class GameScene: SKScene {
     
     var possibleTargets = ["target0", "target1", "target2", "target3"]
-    
+    var score = 0
   
     
     override func didMove(to view: SKView) {
@@ -38,6 +38,9 @@ class GameScene: SKScene {
         let scaleSize = Int.random(in: 30...170)
         sprite.scale(to: CGSize(width: scaleSize, height: scaleSize))
         sprite.position = position
+        
+        sprite.name = target
+        
         addChild(sprite)
     }
     
@@ -54,8 +57,43 @@ class GameScene: SKScene {
     //MARK: - Touch Methods
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let tappedNodes = nodes(at: location)
+        
+        for target in tappedNodes {
+            
+            if target.name == "target0" {
+                score -= 40
+                
+            } else if target.name == "target1" {
+                targetHit(target: target)
 
+            } else if target.name == "target2" {
+                targetHit(target: target)
+                
+            } else if target.name == "target3" {
+                targetHit(target: target)
+
+            }
+        }
+        
+        print(score)
     }
+    
+    
+    func targetHit(target: SKNode) {
+        target.removeFromParent()
+
+        if target.frame.height < 80 {
+            score += 30
+        } else if target.frame.height >= 80 && target.frame.height < 140 {
+            score += 20
+        } else {
+            score += 10
+        }
+    }
+    
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
     }
