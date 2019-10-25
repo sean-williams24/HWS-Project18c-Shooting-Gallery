@@ -12,8 +12,23 @@ import GameplayKit
 class GameScene: SKScene {
     
     var possibleTargets = ["target0", "target1", "target2", "target3"]
-    var score = 0
-  
+    var scoreLabel: SKLabelNode!
+    var score = 0 {
+        didSet {
+            scoreLabel.text = "Score: \(score)"
+        }
+    }
+    var allTargets: [SKNode] = []
+    var timer: Timer?
+    var gameTimer: Timer?
+    var timeLeft = 20 {
+        didSet {
+            timeLeftLabel.text = "Time: \(timeLeft)"
+        }
+    }
+    var timeLeftLabel: SKLabelNode!
+    
+    
     
     override func didMove(to view: SKView) {
         let background = SKSpriteNode(imageNamed: "wood-background")
@@ -23,13 +38,39 @@ class GameScene: SKScene {
         background.size = CGSize(width: 1024, height: 768)
         addChild(background)
         
-        for i in 0...5 { createTarget(at: CGPoint(x: 100 + (i * 170), y: 210)) }
-        for i in 0...5 { createTarget(at: CGPoint(x: 100 + (i * 170), y: 410)) }
-        for i in 0...5 { createTarget(at: CGPoint(x: 100 + (i * 170), y: 610)) }
-
+        scoreLabel = SKLabelNode(fontNamed: "Chalkduster")
+        scoreLabel.text = "Score: 0"
+        scoreLabel.position = CGPoint(x: 10, y: 10)
+        scoreLabel.horizontalAlignmentMode = .left
+        addChild(scoreLabel)
+        
+        timeLeftLabel = SKLabelNode(fontNamed: "Chalkduster")
+        timeLeftLabel.text = "Time: 60"
+        timeLeftLabel.position = CGPoint(x: 900, y: 10)
+        addChild(timeLeftLabel)
+        
+        physicsWorld.gravity = CGVector(dx: 0, dy: 0)
+        
+        timer = Timer.scheduledTimer(timeInterval: 2, target: self, selector: #selector(createRowsOfTargets), userInfo: nil, repeats: true)
+        gameTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(countdown), userInfo: nil, repeats: true)
     }
     
     //MARK: - Private Methods
+    
+    @objc func countdown() {
+        timeLeft -= 1
+    }
+    
+    @objc func createRowsOfTargets() {
+        let xPos1 = Int.random(in: 780...1000)
+        let xPos2 = Int.random(in: 780...1000)
+        let xPos3 = Int.random(in: 780...1000)
+        
+        createTarget(at: CGPoint(x: xPos1, y: 210))
+        createTarget(at: CGPoint(x: xPos2, y: 410))
+        createTarget(at: CGPoint(x: xPos3, y: 610))
+    }
+    
     
     func createTarget(at position: CGPoint) {
         guard let target = possibleTargets.randomElement() else { return }
@@ -40,20 +81,22 @@ class GameScene: SKScene {
         sprite.position = position
         
         sprite.name = target
+        sprite.run(SKAction.moveBy(x: -1000, y: 0, duration: 5))
+        
+        sprite.physicsBody = SKPhysicsBody(texture: sprite.texture!, size: sprite.size)
+        sprite.physicsBody?.categoryBitMask = 1
+        sprite.physicsBody?.velocity = CGVector(dx: -100, dy: 0)
+        sprite.physicsBody?.linearDamping = 0
+        
+        
+        allTargets.append(sprite)
         
         addChild(sprite)
     }
     
     
     
-    func moveTarget() {
-//        guard let target = possibleTargets.randomElement() else { return }
-        
-
-    }
     
-
-
     //MARK: - Touch Methods
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -68,13 +111,13 @@ class GameScene: SKScene {
                 
             } else if target.name == "target1" {
                 targetHit(target: target)
-
+                
             } else if target.name == "target2" {
                 targetHit(target: target)
                 
             } else if target.name == "target3" {
                 targetHit(target: target)
-
+                
             }
         }
         
@@ -84,7 +127,7 @@ class GameScene: SKScene {
     
     func targetHit(target: SKNode) {
         target.removeFromParent()
-
+        
         if target.frame.height < 80 {
             score += 30
         } else if target.frame.height >= 80 && target.frame.height < 140 {
@@ -95,17 +138,29 @@ class GameScene: SKScene {
     }
     
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-    }
-    
-    
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
+        for node in children {
+            if node.position.x < -100 {
+                node.removeFromParent()
+            }
+        }
+        
+        if timeLeft == 0 {
+            timer?.invalidate()
+            gameTimer?.invalidate()
+            
+            let gameOver = SKSpriteNode(imageNamed: "game-over")
+            gameOver.position = CGPoint(x: 512, y: 384)
+            gameOver.zPosition = 1
+            addChild(gameOver)
+            
+            let finalScore = SKLabelNode(fontNamed: "Chalkduster")
+            finalScore.text = "Final Score: \(score)"
+            finalScore.position = CGPoint(x: 512, y: 280)
+            finalScore.horizontalAlignmentMode = .center
+            finalScore.zPosition = 1
+            addChild(finalScore)
+        }
     }
 }
